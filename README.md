@@ -1,6 +1,6 @@
 # create-report-for-pull-requests
 
-This program creates a CSV file based on merged pull requests for a given repository on GitHub. In particular, it reports who merged pull requests. It uses Node.js with the [octokit/node-github](https://github.com/octokit/node-github) library to make requests to GitHub.
+This program creates a CSV file based on merged pull requests for a given repository on GitHub. In particular, it reports who merged pull requests. It uses Node.js with the [octokit/rest.js](https://github.com/octokit/rest.js) library to make requests to GitHub.
 
 ## Author
 
@@ -35,4 +35,4 @@ You can run tests with `npm test`.
 Related links:
 
 * https://developer.github.com/v3/
-* https://octokit.github.io/node-github/
+* https://octokit.github.io/rest.js/
