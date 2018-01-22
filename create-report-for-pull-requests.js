@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
-const GitHubApi = require('github');
+const octokit = require('@octokit/rest')();
 const yargs = require('yargs');
-
-const github = new GitHubApi({});
 
 function getGetPromises(getAllRes, numToProcessStart, numToProcessEnd, owner, repo) {
   const getPromises = [];
@@ -16,7 +14,7 @@ function getGetPromises(getAllRes, numToProcessStart, numToProcessEnd, owner, re
 
     if (shouldMakeGetRequest) {
       const { number } = currRes;
-      getPromises.push(github.pullRequests.get({ owner, repo, number }));
+      getPromises.push(octokit.pullRequests.get({ owner, repo, number }));
     }
   });
   return getPromises;
@@ -131,7 +129,7 @@ function main() {
   const argv = getYargsArgv(yargs);
 
   if (argv.githubToken !== undefined) {
-    github.authenticate({
+    octokit.authenticate({
       type: 'token',
       token: argv.githubToken,
     });
@@ -151,7 +149,7 @@ function main() {
 
   const getAllPromises = [];
   for (let numCurrPage = numStartPage; numCurrPage < numEndPage + 1; numCurrPage += 1) {
-    getAllPromises.push(github.pullRequests.getAll({
+    getAllPromises.push(octokit.pullRequests.getAll({
       owner,
       repo,
       sort: 'created',
