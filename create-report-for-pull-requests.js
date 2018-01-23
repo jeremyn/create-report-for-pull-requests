@@ -130,22 +130,7 @@ function writeTrackerToCSV(tracker, fileName) {
   }
 }
 
-function main() {
-  const argv = getYargsArgv(yargs);
-
-  if (argv.githubToken !== undefined) {
-    octokit.authenticate({
-      type: 'token',
-      token: argv.githubToken,
-    });
-  }
-
-  const [owner, repo] = [argv.owner, argv.repo];
-  const numStartPR = argv.startNum;
-  const numTotalPRs = argv.totalNum;
-  const numPerPage = argv.perPageNum;
-  const outputFileName = argv.outputFile;
-
+function processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName) {
   const [numStartPage, numEndPage] = getStartAndEndPages(
     numStartPR,
     numTotalPRs,
@@ -192,6 +177,25 @@ function main() {
       // printTracker(tracker);
       writeTrackerToCSV(tracker, outputFileName);
     }).catch(handlePromiseError);
+}
+
+function main() {
+  const argv = getYargsArgv(yargs);
+
+  if (argv.githubToken !== undefined) {
+    octokit.authenticate({
+      type: 'token',
+      token: argv.githubToken,
+    });
+  }
+
+  const [owner, repo] = [argv.owner, argv.repo];
+  const numStartPR = argv.startNum;
+  const numTotalPRs = argv.totalNum;
+  const numPerPage = argv.perPageNum;
+  const outputFileName = argv.outputFile;
+
+  processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName);
 }
 
 module.exports = {
