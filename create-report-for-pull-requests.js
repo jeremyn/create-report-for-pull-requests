@@ -3,6 +3,11 @@ const fs = require('fs');
 const octokit = require('@octokit/rest')();
 const yargs = require('yargs');
 
+function handlePromiseError(err) {
+  console.log(err);
+  process.exitCode = 1;
+}
+
 function getGetPromises(getAllRes, numToProcessStart, numToProcessEnd, owner, repo) {
   const getPromises = [];
   getAllRes.data.forEach((currRes, numCurrRes) => {
@@ -171,10 +176,7 @@ function main() {
         owner,
         repo,
       ));
-    }).catch((err) => {
-      console.log(err);
-      process.exitCode = 1;
-    }));
+    }).catch(handlePromiseError));
   }
 
   const tracker = [];
@@ -189,10 +191,7 @@ function main() {
     .then(() => {
       // printTracker(tracker);
       writeTrackerToCSV(tracker, outputFileName);
-    }).catch((err) => {
-      console.log(err);
-      process.exitCode = 1;
-    });
+    }).catch(handlePromiseError);
 }
 
 module.exports = {
