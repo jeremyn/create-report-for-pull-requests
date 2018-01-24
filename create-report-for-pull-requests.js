@@ -8,8 +8,8 @@ function handlePromiseError(err) {
   process.exitCode = 1;
 }
 
-function getGetPromises(getAllRes, numToProcessStart, numToProcessEnd, owner, repo) {
-  const getPromises = [];
+function getPRsToCheck(getAllRes, numToProcessStart, numToProcessEnd) {
+  const PRsToCheck = [];
   getAllRes.data.forEach((currRes, numCurrRes) => {
     const shouldMakeGetRequest = (
       (numCurrRes >= numToProcessStart) &&
@@ -19,10 +19,10 @@ function getGetPromises(getAllRes, numToProcessStart, numToProcessEnd, owner, re
 
     if (shouldMakeGetRequest) {
       const { number } = currRes;
-      getPromises.push(octokit.pullRequests.get({ owner, repo, number }));
+      PRsToCheck.push(number);
     }
   });
-  return getPromises;
+  return PRsToCheck;
 }
 
 function getStartAndEndPages(numStartPR, numTotalPRs, numPerPage) {
@@ -130,6 +130,24 @@ function writeTrackerToCSV(tracker, fileName) {
   }
 }
 
+function processListOfPRs(listOfPRs, owner, repo, outputFileName) {
+  const getRequests = [];
+  listOfPRs.forEach((number) => {
+    getRequests.push(octokit.pullRequests.get({ owner, repo, number }));
+  });
+
+  Promise
+    .all(getRequests)
+    .then((getRequestsRes) => {
+      const tracker = [];
+      getRequestsRes.forEach((getRes) => {
+        updateTracker(getRes, tracker);
+      });
+      writeTrackerToCSV(tracker, outputFileName);
+    })
+    .catch(handlePromiseError);
+}
+
 function processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName) {
   const [numStartPage, numEndPage] = getStartAndEndPages(
     numStartPR,
@@ -137,46 +155,46 @@ function processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, out
     numPerPage,
   );
 
-  const getAllPromises = [];
+  const getAllRequests = [];
   for (let numCurrPage = numStartPage; numCurrPage < numEndPage + 1; numCurrPage += 1) {
-    getAllPromises.push(octokit.pullRequests.getAll({
-      owner,
-      repo,
-      sort: 'created',
-      direction: 'desc',
-      state: 'closed',
-      page: numCurrPage + 1,
-      per_page: numPerPage,
-    }).then((getAllRes) => {
-      const [numToProcessStart, numToProcessEnd] = getStartAndEndNums(
-        numCurrPage,
-        numStartPR,
-        numTotalPRs,
-        numPerPage,
-      );
-      return Promise.all(getGetPromises(
-        getAllRes,
-        numToProcessStart,
-        numToProcessEnd,
-        owner,
-        repo,
-      ));
-    }).catch(handlePromiseError));
+    getAllRequests.push(
+      octokit.pullRequests
+        .getAll({
+          owner,
+          repo,
+          sort: 'created',
+          direction: 'desc',
+          state: 'closed',
+          page: numCurrPage + 1,
+          per_page: numPerPage,
+        })
+        .then((getAllRes) => {
+          const [numToProcessStart, numToProcessEnd] = getStartAndEndNums(
+            numCurrPage,
+            numStartPR,
+            numTotalPRs,
+            numPerPage,
+          );
+          return getPRsToCheck(
+            getAllRes,
+            numToProcessStart,
+            numToProcessEnd,
+          );
+        })
+        .catch(handlePromiseError),
+    );
   }
 
-  const tracker = [];
-  Promise.all(getAllPromises)
-    .then((getAllPromisesRes) => {
-      getAllPromisesRes.forEach((page) => {
-        page.forEach((get) => {
-          updateTracker(get, tracker);
-        });
+  const allPRsToCheck = [];
+  Promise
+    .all(getAllRequests)
+    .then((getAllRequestsRes) => {
+      getAllRequestsRes.forEach((thesePRsToCheck) => {
+        thesePRsToCheck.forEach(thisPR => allPRsToCheck.push(thisPR));
       });
+      processListOfPRs(allPRsToCheck, owner, repo, outputFileName);
     })
-    .then(() => {
-      // printTracker(tracker);
-      writeTrackerToCSV(tracker, outputFileName);
-    }).catch(handlePromiseError);
+    .catch(handlePromiseError);
 }
 
 function main() {
