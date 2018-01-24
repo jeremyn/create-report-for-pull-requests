@@ -69,13 +69,21 @@ function getYargsArgv(yargs_) {
     .nargs('r', 1)
     .alias('r', 'repo')
     .describe('r', 'name of repo')
+    .nargs('l', 1)
+    .alias('l', 'list-of-pull-requests')
+    .describe('l', 'comma-delimited list of PRs numbers to check')
+    .nargs('p', 1)
+    .alias('p', 'per-page-num')
+    .describe('p', 'number of PRs to load per page')
+    .default('p', 100) // max accepted by GitHub
     .nargs('s', 1)
     .alias('s', 'start-num')
     .describe('s', 'first PR to check (zero-indexed)')
     .nargs('t', 1)
     .alias('t', 'total-num')
     .describe('t', 'total number of PRs to check')
-    .demandOption(['owner', 'repo', 'start-num', 'total-num'])
+    .demandOption(['owner', 'repo'])
+    .conflicts('l', ['s', 't'])
     .nargs('f', 1)
     .alias('f', 'output-file')
     .describe('f', 'output CSV filename')
@@ -83,10 +91,6 @@ function getYargsArgv(yargs_) {
     .nargs('g', 1)
     .alias('g', 'github-token')
     .describe('g', 'GitHub personal access token')
-    .nargs('p', 1)
-    .alias('p', 'per-page-num')
-    .describe('p', 'number of PRs to load per page')
-    .default('p', 100) // max accepted by GitHub
     .help('h')
     .alias('h', 'help')
     .version(false)
@@ -208,12 +212,22 @@ function main() {
   }
 
   const [owner, repo] = [argv.owner, argv.repo];
+  const listOfPRs = argv.listOfPullRequests;
   const numStartPR = argv.startNum;
   const numTotalPRs = argv.totalNum;
   const numPerPage = argv.perPageNum;
   const outputFileName = argv.outputFile;
 
-  processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName);
+  if (listOfPRs === undefined) {
+    processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName);
+  } else {
+    processListOfPRs(
+      listOfPRs.split(',').sort().reverse(),
+      owner,
+      repo,
+      outputFileName,
+    );
+  }
 }
 
 module.exports = {
