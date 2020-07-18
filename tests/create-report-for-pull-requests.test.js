@@ -1,7 +1,12 @@
+// By: Jeremy Nation <jeremy@jeremynation.me>
+// Licensed under GPLv3 or later (see included LICENSE file)
 const assert = require('assert');
+const fs = require('fs');
 const {
+  getOctokit,
   getStartAndEndNums,
   getStartAndEndPages,
+  main,
   updateTracker,
 } = require('../create-report-for-pull-requests');
 
@@ -159,5 +164,32 @@ describe('updateTracker', () => {
         htmlURL,
       ],
     ]);
+  });
+});
+
+describe('main', () => {
+  const listOfPRs = undefined;
+  const numStartPR = 0;
+  const numTotalPRs = 1;
+  const numPerPage = 100;
+  const owner = 'octokit';
+  const repo = 'rest.js';
+  const outputFileName = 'test_results.csv';
+  const githubToken = undefined;
+  const octokit = getOctokit(githubToken);
+
+  before(function beforeFunc(done) {
+    this.timeout(4000);
+    main(listOfPRs, numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName, octokit);
+    setTimeout(done, 2000);
+  });
+
+  after(() => {
+    fs.unlinkSync(outputFileName);
+  });
+
+  it('should write valid output', () => {
+    const lines = fs.readFileSync(outputFileName, 'utf8').split('\n');
+    assert.strictEqual(lines.length, 3);
   });
 });

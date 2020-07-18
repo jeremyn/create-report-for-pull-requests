@@ -15,12 +15,12 @@ GPLv3 or later (see included `LICENSE` file).
 Install dependencies with `npm install`. You can run the program with:
 
 ```
-$ ./create-report-for-pull-requests.js [options]
+$ node create-report-for-pull-requests.js [options]
 ```
 
 The `--help` option will show supported options.
 
-This program uses two types of GitHub API requests: one [lists information](https://developer.github.com/v3/pulls/#list-pull-requests) about multiple pull requests, and the other [gets more information](https://developer.github.com/v3/pulls/#get-a-single-pull-request) about a single pull request. Unfortunately, the list-information approach doesn't report who merged each pull request. Instead, you need to make a second get-more-information request for each pull request to find out who merged it. So, the strategy this program uses is to request information for all closed pull requests and then make a second request for each merged pull request to find out who merged it.
+This program uses two types of GitHub API requests: one [lists information](https://developer.github.com/v3/pulls/#list-pull-requests) about multiple pull requests, and the other [gets more information](https://developer.github.com/v3/pulls/#get-a-pull-request) about a single pull request. Unfortunately, the list-information approach doesn't report who merged each pull request. Instead, you need to make a second get-more-information request for each pull request to find out who merged it. So, the strategy this program uses is to request information for all closed pull requests and then make a second request for each merged pull request to find out who merged it.
 
 GitHub rate limits requests to their API. You can see the current rules [here](https://developer.github.com/v3/#rate-limiting). For a repository with very many pull requests, you might not be able to make all the necessary requests at one time within the allowed limits. However, the program returns the data sorted by pull request creation date, starting with the most recent, and supports specifying a range of pull requests, so you can run the program multiple times with different ranges to get data for a large number of pull requests. For example, `--start-num 0 ---total-num 50` will get data on the first 50 pull requests, `--start-num 50 ---total-num 50` will get data on the second 50 pull requests, and so on. Note that `--start-num` starts counting at 0. You can create a different output file each time with the `--output-file` option and then manually combine the files to get a full report.
 

@@ -1,6 +1,7 @@
-#!/usr/bin/env node
+// By: Jeremy Nation <jeremy@jeremynation.me>
+// Licensed under GPLv3 or later (see included LICENSE file)
 const fs = require('fs');
-const octokit = require('@octokit/rest')();
+const { Octokit } = require('@octokit/rest');
 const yargs = require('yargs');
 
 function handlePromiseError(err) {
@@ -12,9 +13,9 @@ function getPRsToCheck(getAllRes, numToProcessStart, numToProcessEnd) {
   const PRsToCheck = [];
   getAllRes.data.forEach((currRes, numCurrRes) => {
     const shouldMakeGetRequest = (
-      (numCurrRes >= numToProcessStart) &&
-      (numCurrRes < numToProcessEnd) &&
-      (currRes.merged_at !== null)
+      (numCurrRes >= numToProcessStart)
+      && (numCurrRes < numToProcessEnd)
+      && (currRes.merged_at !== null)
     );
 
     if (shouldMakeGetRequest) {
@@ -134,10 +135,10 @@ function writeTrackerToCSV(tracker, fileName) {
   }
 }
 
-function processListOfPRs(listOfPRs, owner, repo, outputFileName) {
+function processListOfPRs(listOfPRs, owner, repo, outputFileName, octokit) {
   const getRequests = [];
   listOfPRs.forEach((number) => {
-    getRequests.push(octokit.pullRequests.get({ owner, repo, number }));
+    getRequests.push(octokit.pulls.get({ owner, repo, pull_number: number }));
   });
 
   Promise
@@ -152,7 +153,9 @@ function processListOfPRs(listOfPRs, owner, repo, outputFileName) {
     .catch(handlePromiseError);
 }
 
-function processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName) {
+function processRangeOfPRs(
+  numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName, octokit,
+) {
   const [numStartPage, numEndPage] = getStartAndEndPages(
     numStartPR,
     numTotalPRs,
@@ -162,30 +165,27 @@ function processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, out
   const getAllRequests = [];
   for (let numCurrPage = numStartPage; numCurrPage < numEndPage + 1; numCurrPage += 1) {
     getAllRequests.push(
-      octokit.pullRequests
-        .getAll({
-          owner,
-          repo,
-          sort: 'created',
-          direction: 'desc',
-          state: 'closed',
-          page: numCurrPage + 1,
-          per_page: numPerPage,
-        })
-        .then((getAllRes) => {
-          const [numToProcessStart, numToProcessEnd] = getStartAndEndNums(
-            numCurrPage,
-            numStartPR,
-            numTotalPRs,
-            numPerPage,
-          );
-          return getPRsToCheck(
-            getAllRes,
-            numToProcessStart,
-            numToProcessEnd,
-          );
-        })
-        .catch(handlePromiseError),
+      octokit.pulls.list({
+        owner,
+        repo,
+        sort: 'created',
+        direction: 'desc',
+        state: 'closed',
+        page: numCurrPage + 1,
+        per_page: numPerPage,
+      }).then((getAllRes) => {
+        const [numToProcessStart, numToProcessEnd] = getStartAndEndNums(
+          numCurrPage,
+          numStartPR,
+          numTotalPRs,
+          numPerPage,
+        );
+        return getPRsToCheck(
+          getAllRes,
+          numToProcessStart,
+          numToProcessEnd,
+        );
+      }).catch(handlePromiseError),
     );
   }
 
@@ -194,48 +194,52 @@ function processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, out
     .all(getAllRequests)
     .then((getAllRequestsRes) => {
       getAllRequestsRes.forEach((thesePRsToCheck) => {
-        thesePRsToCheck.forEach(thisPR => allPRsToCheck.push(thisPR));
+        thesePRsToCheck.forEach((thisPR) => allPRsToCheck.push(thisPR));
       });
-      processListOfPRs(allPRsToCheck, owner, repo, outputFileName);
+      processListOfPRs(allPRsToCheck, owner, repo, outputFileName, octokit);
     })
     .catch(handlePromiseError);
 }
 
-function main() {
+function main(
+  listOfPRs, numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName, octokit,
+) {
+  if (listOfPRs === undefined) {
+    processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName, octokit);
+  } else {
+    processListOfPRs(listOfPRs.split(',').sort().reverse(), owner, repo, outputFileName, octokit);
+  }
+}
+
+function getOctokit(githubToken) {
+  const octokitArgs = {};
+  if (githubToken !== undefined) {
+    octokitArgs.auth = githubToken.toString();
+  }
+  return new Octokit(octokitArgs);
+}
+
+if (require.main === module) {
   const argv = getYargsArgv(yargs);
 
-  if (argv.githubToken !== undefined) {
-    octokit.authenticate({
-      type: 'token',
-      token: argv.githubToken,
-    });
-  }
+  const octokit = getOctokit(argv.githubToken);
 
-  const [owner, repo] = [argv.owner, argv.repo];
-  const listOfPRs = argv.listOfPullRequests;
-  const numStartPR = argv.startNum;
-  const numTotalPRs = argv.totalNum;
-  const numPerPage = argv.perPageNum;
-  const outputFileName = argv.outputFile;
-
-  if (listOfPRs === undefined) {
-    processRangeOfPRs(numStartPR, numTotalPRs, numPerPage, owner, repo, outputFileName);
-  } else {
-    processListOfPRs(
-      listOfPRs.split(',').sort().reverse(),
-      owner,
-      repo,
-      outputFileName,
-    );
-  }
+  main(
+    argv.listOfPullRequests,
+    argv.startNum,
+    argv.totalNum,
+    argv.perPageNum,
+    argv.owner,
+    argv.repo,
+    argv.outputFile,
+    octokit,
+  );
 }
 
 module.exports = {
+  getOctokit,
   getStartAndEndNums,
   getStartAndEndPages,
+  main,
   updateTracker,
 };
-
-if (require.main === module) {
-  main();
-}
