@@ -1,15 +1,18 @@
 {
   "name": "create-report-for-pull-requests",
   "version": "0.0.0",
+  "engines": {
+    "node": ">=14.5.0"
+  },
   "dependencies": {
-    "@octokit/rest": "^14.0.5",
-    "yargs": "^10.1.1"
+    "@octokit/rest": ">=18.0.1",
+    "yargs": ">=13.3.2"
   },
   "devDependencies": {
-    "eslint": "^4.15.0",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.8.0",
-    "mocha": "^4.1.0"
+    "eslint": ">=7.4.0",
+    "eslint-config-airbnb-base": ">=14.2.0",
+    "eslint-plugin-import": ">=2.22.0",
+    "mocha": ">=8.0.1"
   },
   "scripts": {
     "test": "mocha tests/create-report-for-pull-requests.test.js"
