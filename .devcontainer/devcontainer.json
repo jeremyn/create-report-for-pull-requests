@@ -1,0 +1,15 @@
+{
+	"context": "..",
+	"dockerFile": "../Dockerfile",
+	"extensions": [
+		"ms-azuretools.vscode-docker"
+	],
+	"mounts": [
+		"source=create-report-for-pull-requests-vscode-extensions,target=/home/node/.vscode-server/extensions,type=volume"
+	],
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash"
+	},
+	"workspaceFolder": "/workdir",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workdir,type=bind,consistency=delegated"
+}
