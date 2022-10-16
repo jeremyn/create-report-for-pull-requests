@@ -1,14 +1,10 @@
 # create-report-for-pull-requests
 
+By: [Jeremy Nation](mailto:jeremy@jeremynation.me).
+
+## Summary
+
 This program creates a CSV file based on merged pull requests for a given repository on GitHub. In particular, it reports who merged pull requests. It uses Node.js with the [octokit/rest.js](https://github.com/octokit/rest.js) library to make requests to GitHub.
-
-## Author
-
-[Jeremy Nation](https://jeremynation.me).
-
-## License
-
-GPLv3 or later (see included `LICENSE` file).
 
 ## Notes
 
@@ -50,3 +46,9 @@ Then run a container while mapping the code into it, for example:
 This will give you a Bash prompt in the container in `/workdir` with the code.
 
 You can also open this project with VS Code in a container with the included [`devcontainer.json`](https://code.visualstudio.com/docs/remote/create-dev-container#_create-a-devcontainerjson-file).
+
+## License
+
+Copyright [Jeremy Nation](mailto:jeremy@jeremynation.me).
+
+Licensed under the GNU General Public License (GPL) v3. See the included [`LICENSE`](LICENSE) file for the full license text.

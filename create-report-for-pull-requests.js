@@ -1,5 +1,6 @@
-// By: Jeremy Nation <jeremy@jeremynation.me>
-// Licensed under GPLv3 or later (see included LICENSE file)
+/* Copyright Jeremy Nation <jeremy@jeremynation.me>.
+ * Licensed under the GNU General Public License (GPL) v3.
+ */
 const fs = require('fs');
 const { Octokit } = require('@octokit/rest');
 const yargs = require('yargs');
